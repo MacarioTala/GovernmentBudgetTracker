@@ -1,9 +1,10 @@
 
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass,field
 from io import BytesIO
 from openpyxl import load_workbook
 import requests
+from bs4 import BeautifulSoup
 
 @dataclass
 class Budget:
@@ -18,8 +19,16 @@ class Expenditure:
     amount : int
     percentage : float
     level : int
+    gao_function: GAOFunction | None = None
 
-
+@dataclass
+class GAOFunction:
+    code: str
+    name: str
+    description: str
+    supercode: str | None = None
+    subcodes: list[str]=field(default_factory=list)
+    
 def get_budget_data()-> Budget:
     dataset_url = "https://www.govinfo.gov/content/pkg/BUDGET-2027-TAB/xls/BUDGET-2027-TAB-2-1.xlsx"
     df = pd.read_excel(dataset_url)
@@ -32,6 +41,10 @@ def get_budget_data()-> Budget:
     )
 
 def get_expenditure_by_function(budget_total: int,year:int = 2025)-> list[Expenditure]:
+    gao_by_name = {
+        x.name.strip().lower(): x
+        for x in get_GAO_functions()
+    }
     dataset_url = (
         "https://www.govinfo.gov/content/pkg/"
         "BUDGET-2027-TAB/xls/BUDGET-2027-TAB-4-1.xlsx"
@@ -72,7 +85,8 @@ def get_expenditure_by_function(budget_total: int,year:int = 2025)-> list[Expend
                 name=str(name),
                 amount=int(amount),
                 percentage=(int(amount) / budget_total) * 100,
-                level=int(name_cell.alignment.indent or 0)
+                level=int(name_cell.alignment.indent or 0),
+                gao_function=gao_by_name.get(name.lower())
             )
         )
     
@@ -126,7 +140,7 @@ def get_major_categories(expenditures:list[Expenditure])-> list[Expenditure]:
                                  if x.amount<0)
 
     uor_expenditure = Expenditure(
-        name="Undistributed offsetting receipts",
+        name="UOR",
         amount=uor_amount,
         percentage=uor_percentage,
         level=0
@@ -137,17 +151,85 @@ def get_major_categories(expenditures:list[Expenditure])-> list[Expenditure]:
 
     return major_categories
 
+def get_GAO_functions()->list[GAOFunction]: 
+    with open("GAO.html","r", encoding="utf-8") as f:
+        soup = BeautifulSoup(f,"html.parser")
+    gao_text = soup.get_text("\n",strip=True)
+
+    start_marker = "Code: 050;"
+    end_marker = "Source: GAO."
+
+    start_index = gao_text.find(start_marker)
+    end_index = gao_text.find(end_marker)
+
+    if start_index==-1 or end_index==-1:
+        raise ValueError("Cannot locate definitions section")
+
+    important_bits = gao_text[start_index:end_index]
+
+    lines = important_bits.splitlines()
+
+    supercode_marker = "Code:"
+    subcode_marker = "Subcode:"
+    function_marker = "Function:"
+    subfunction_marker="Subfunction:"
+
+    GAOFunctions=[]
+    current_description=[]
+    current_subcodes=[]
+    current_supercode=None
+
+    for line in lines:    
+        if supercode_marker in line:
+            supercode = line.removeprefix(supercode_marker).strip().removesuffix(";")
+            if current_supercode is not None:
+                GAOFunctions.append(
+                    GAOFunction(
+                        code=current_supercode,
+                        name=current_function,
+                        description="\n".join(current_description).strip(),
+                        subcodes=current_subcodes.copy()))
+
+            current_supercode = supercode
+            current_function = None
+            current_description = []
+            current_subcodes = []
+
+        elif function_marker in line:
+            current_function = line.removeprefix(function_marker).strip().removesuffix(".")
+
+        elif subcode_marker in line:
+            current_subcode= line.removeprefix(subcode_marker).strip().removesuffix(";")
+            current_subcodes.append(current_subcode)
+
+        elif subfunction_marker in line:
+            current_subfunction= line.removeprefix(subfunction_marker).strip().removesuffix(";")
     
+        else:
+            current_description.append(line)
+
+    if current_supercode is not None:
+        GAOFunctions.append(
+            GAOFunction(
+                code=current_supercode,
+                name=current_function,
+                description="\n".join(current_description).strip(),
+                subcodes=current_subcodes.copy()))
+        
+    return GAOFunctions
 
 
 #%%
 from etl import get_budget_data
 from etl import get_expenditure_by_function
 from etl import get_major_categories
+from etl import get_GAO_functions
 budget_total = get_budget_data().outlays
 expenditures = get_expenditure_by_function(budget_total)
-major_categories = get_major_categories(expenditures)
-
-for x in major_categories:
-    print(f"{x.name:<55} : {x.percentage:>6.2f} %")
+# major_categories = get_major_categories(expenditures)
+expenditures[0]
+# for x in major_categories:
+#     print(f"{x.name:<55} : {x.percentage:>6.2f} %")
+# gfs=get_GAO_functions()
+# gfs[0]
 # %%

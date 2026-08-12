@@ -1,107 +1,46 @@
-import time
 import streamlit as st
+from etl import Expenditure
 
-def animate_spending_breakdown(
-    total_spending: float,
-    categories: list,
-    duration: float = 1.2
-):
-    placeholder = st.empty()
+def select_expenditure(category_name):
+    st.session_state.selected_expenditure = category_name
+    print("callback called",category_name)
 
-    # Stage 1: one big green spending block
-    placeholder.html(
+def render_selected(category: Expenditure):
+    st.markdown(
         f"""
-        <div style="
-            width: 100%;
-            height: 72px;
-            background: #2ecc71;
-            border-radius: 10px;
-            box-shadow: 0 6px 0 #1f9d55;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-        ">
-            Total spending: ${total_spending:.2f}T
-        </div>
-        """
+        <div class="budget-card-selected">
+            <div>{category.name}</div>
+            <div>{category.percentage:.2f}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
     )
 
-    time.sleep(0.8)
+def animate_spending_breakdown(categories : list[Expenditure]):
 
-    steps = 40
+    if "selected_expenditure" not in st.session_state:
+        st.session_state.selected_expenditure = None
 
-    for step in range(steps + 1):
-        progress = step / steps
+    selected = st.session_state.selected_expenditure
 
-        boxes = ""
+    widths =[
+        max(abs(category.percentage),4)
+        for category in categories
+    ]
 
-        for category in categories:
-            # Use absolute percentage so UOR gets visible width
-            width = abs(category.percentage) * progress
+    columns = st.columns(widths, gap=None)
 
-            is_uor = category.name == "Undistributed offsetting receipts"
+    for column, category in zip(columns,categories):
 
-            label = "UOR" if is_uor else category.name
+        with column:
 
-            background = "#2980b9" if is_uor else "#2ecc71"
+            if selected == category.name:
+                render_selected(category)
+            else:
+                st.button(
+                    f"{category.name}\n\n{category.percentage:.1f}%",
+                    key=f"category_{category.name}",
+                    use_container_width=True,
+                    on_click=select_expenditure,
+                    args=(category.name,))
 
-            tooltip = (
-                "Undistributed Offsetting Receipts are the government's "
-                "equivalent of finding some loose change under the couch"
-                if is_uor
-                else category.name
-            )
-
-            boxes += f"""
-            <div
-                title="{tooltip}"
-                style="
-                    width: {width}%;
-                    min-width: {"55px" if is_uor else "0"};
-                    height: 90px;
-                    background: {background};
-                    border-right: 2px solid white;
-                    box-sizing: border-box;
-
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-
-                    color: white;
-                    font-weight: 700;
-                    text-align: center;
-
-                    box-shadow: inset 0 -6px 0 rgba(0,0,0,0.15);
-
-                    overflow: hidden;
-                "
-            >
-                <div>{label}</div>
-                <div style="
-                    font-size: 13px;
-                    font-weight: 500;
-                    margin-top: 4px;
-                ">
-                    {category.percentage:.1f}%
-                </div>
-            </div>
-            """
-
-        placeholder.html(
-            f"""
-            <div style="
-                display: flex;
-                width: 100%;
-                border-radius: 10px;
-                overflow: hidden;
-            ">
-                {boxes}
-            </div>
-            """
-        )
-
-        time.sleep(duration / steps)

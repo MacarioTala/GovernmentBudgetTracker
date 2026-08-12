@@ -2,12 +2,16 @@
 #%%
 import streamlit as st
 from etl import get_budget_data,get_major_categories,get_expenditure_by_function
-from animate_bar import animate_bar
-from animate_spending_breakdown import animate_spending_breakdown
+from show_budget_intro import show_budget_intro
+from animate_initial_spending import animate_initial_spending
 
 def load_css(filename):
     with open(filename) as f:
         st.html(f"<style>{f.read()}</style>")
+
+def start_budget():
+    st.session_state.started=True
+
 load_css("style.css")
 
 budget = get_budget_data()
@@ -17,66 +21,22 @@ intro = st.empty()
 if "started" not in st.session_state:
     st.session_state.started = False
 
+if "selected_expenditure" not in st.session_state:
+    st.session_state.selected_expenditure = None
+
 tax_receipts = budget.receipts/1_000_000
 spent = budget.outlays/1_000_000
 gap = abs(budget.deficit)/1_000_000
 
-total_budget = spent
-
-income_pct=(tax_receipts/total_budget)*100
-gap_pct=(gap/total_budget)*100
-
-def start_budget():
-    st.session_state.started=True
-    intro.empty()
 
 if not st.session_state.started:
-    with intro.container():
-        st.write("Here's what we took in and spent last year")
-        animate_bar(
-            "Income:",
-            amount=tax_receipts,
-            max_amount=spent)
-
-        animate_bar(
-            "Spending:",
-            amount=spent,
-            max_amount=spent,
-            threshold=tax_receipts)
-
-        income,spending =st.columns(2)
-        with income:
-            st.metric(
-                "Income",
-                f"${tax_receipts:.2f} trillion"
-            )
-
-        with spending:
-            st.metric(
-                "Spent",
-                f"${spent:.2f} trillion"
-            )
-
-        st.metric(
-            "Budget gap",
-            f"${gap:.2f} trillion")
-
-        st.markdown(
-            """
-            <small><i>
-            Source: GovInfo.gov —
-            <a href="https://www.govinfo.gov/app/details/BUDGET-2027-TAB/BUDGET-2027-TAB-2-1">
-            Table 1.1 - Summary of Receipts, Outlays, and Surpluses or Deficits (-): 1789-2025
-            </a>
-            </i></small>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.write(f"If we changed absolutely nothing and didn't grow, we would need to borrow another {gap:.2f} trillion")
-        st.write("Think you can balance the budget?")
-
-        st.button("Start ->",on_click=start_budget)
+    show_budget_intro(
+        intro,
+        tax_receipts,
+        spent,
+        gap
+    )
+    st.button("Start ->",on_click=start_budget)
 
 if st.session_state.started:
     st.subheader("Here's how that breaks down")
@@ -84,9 +44,35 @@ if st.session_state.started:
     expenditures = get_expenditure_by_function(budget.outlays)
     categories = get_major_categories(expenditures)
 
-    animate_spending_breakdown(
-        total_spending=budget.outlays / 1_000_000,
-        categories=categories
+    should_animate = not st.session_state.get(
+        "initial_spending_done",
+        False
     )
+
+    result = animate_initial_spending(
+        total_spending=spent,
+        categories=categories,
+        animate=should_animate
+    )
+
+    if should_animate:
+        st.session_state.initial_spending_done = True
+
+    if result.selected is not None:
+        st.session_state.selected_expenditure = result.selected
+
+    st.write("Selected expenditure:",st.session_state.selected_expenditure)
+
+    st.markdown(
+                        """
+                        <small><i>
+                        Source: GovInfo.gov —
+                        <a href="https://www.govinfo.gov/app/details/BUDGET-2027-TAB/BUDGET-2027-TAB-4-1">
+                        GovInfo.Gov: Budget FY 2027 - Table 3.1 - Outlays by Superfunction and Function: 1940-2031
+                        </a>
+                        </i></small>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
 # %%
