@@ -1,5 +1,6 @@
 
 import pandas as pd
+import streamlit as st
 from dataclasses import dataclass,field
 from io import BytesIO
 from openpyxl import load_workbook
@@ -28,7 +29,11 @@ class GAOFunction:
     description: str
     supercode: str | None = None
     subcodes: list[str]=field(default_factory=list)
-    
+
+def load_css_for_streamlit_controls(filename):
+    with open(filename) as f:
+        st.html(f"<style>{f.read()}</style>")
+
 def get_budget_data()-> Budget:
     dataset_url = "https://www.govinfo.gov/content/pkg/BUDGET-2027-TAB/xls/BUDGET-2027-TAB-2-1.xlsx"
     df = pd.read_excel(dataset_url)

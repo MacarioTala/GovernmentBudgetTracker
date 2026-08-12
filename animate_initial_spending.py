@@ -1,5 +1,6 @@
 import time
 import streamlit as st
+from pathlib import Path
 from etl import Expenditure
 from build_spending_boxes import build_spending_boxes
 
@@ -7,38 +8,13 @@ SPENDING_HTML = """
 <div id="spending-container"></div>
 """
 
-SPENDING_JS = """
-export default function(component) {
-
-    const {
-        data,
-        parentElement,
-        setTriggerValue
-    } = component;
-
-    const container =
-        parentElement.querySelector("#spending-container");
-
-    container.innerHTML = data.html;
-
-    container.addEventListener("click", (event) => {
-        const button = event.target.closest(".budget-box");
-
-        if (!button) {
-            return;
-        }
-
-        setTriggerValue(
-            "selected",
-            button.dataset.category
-        );
-    });
-}
-"""
+SPENDING_JS = Path("spending-component.js").read_text()
+SPENDING_CSS = Path("style.css").read_text()
 
 spending_component = st.components.v2.component(
     "spending_breakdown",
     html=SPENDING_HTML,
+    css=SPENDING_CSS,
     js=SPENDING_JS
 )
 
@@ -79,8 +55,6 @@ def animate_initial_spending(
         for step in range(steps + 1):
             progress = step / steps
 
-            boxes = ""
-
             boxes_html = build_spending_boxes(categories,progress)
             placeholder.html(boxes_html)
 
@@ -97,5 +71,5 @@ def animate_initial_spending(
         on_selected_change=lambda: None,
         key="spending_breakdown"
         )
-    print(result)
+
     return result

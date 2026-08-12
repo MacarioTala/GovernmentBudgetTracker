@@ -25,30 +25,12 @@ def build_spending_boxes(
         <button
             class="budget-box"
             data-category="{category.name}"
+            data-gaocode ="{category.gao_function.code if category.gao_function else ''}"
             title="{tooltip}"
             style="
                 width: {width}%;
                 min-width: {"55px" if is_uor else "0"};
-                height: 90px;
                 background: {background};
-                border: none;
-                border-right: 2px solid white;
-                padding: 0;
-                box-sizing: border-box;
-
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-
-                color: white;
-                font-weight: 700;
-                text-align: center;
-
-                box-shadow: inset 0 -6px 0 rgba(0,0,0,0.15);
-
-                overflow: hidden;
-                cursor: pointer;
             "
         >
             <div>{label}</div>
