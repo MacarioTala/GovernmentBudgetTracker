@@ -38,7 +38,7 @@ export default function(component) {
                 }
 
             );
-        }, 3000);
+        }, 350);
         
     });
 }

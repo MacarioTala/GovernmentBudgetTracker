@@ -1,5 +1,7 @@
 
 #%%
+import time
+
 import streamlit as st
 from etl import get_budget_data,get_major_categories,get_expenditure_by_function
 from show_budget_intro import show_budget_intro
@@ -13,6 +15,7 @@ def start_budget():
 load_css_for_streamlit_controls("style.css")
 
 budget = get_budget_data()
+
 st.title(f"The USA: A Household Budget - {budget.year}")
 intro = st.empty()
 
@@ -37,11 +40,20 @@ if not st.session_state.started:
     st.button("Start ->",on_click=start_budget)
 
 if st.session_state.started:
-    st.subheader("Here's how that breaks down")
+    title_column,next_column = st.columns([.87,.13])
 
+    with title_column:
+        st.subheader("Here's how that breaks down")
+
+    with next_column:
+        if st.button("Next->", use_container_width=True):
+            st.write("clicked next!")
+
+    #etl section - cached in module
     expenditures = get_expenditure_by_function(budget.outlays)
     categories = get_major_categories(expenditures)
     gao_functions = get_GAO_functions()
+
 
     should_animate = not st.session_state.get(
         "initial_spending_done",
@@ -106,6 +118,8 @@ if st.session_state.started:
                             """,
                             unsafe_allow_html=True
                         )
+    st.write("Click each function to see more details")
+    st.write("When you're ready, click next, and let's balance the budget!")
     if expenditure_amount:
         st.header(f"**This cost USD${human_conceivable_number(expenditure_amount)} in {budget.year}**")
 

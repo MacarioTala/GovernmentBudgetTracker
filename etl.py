@@ -34,6 +34,7 @@ def load_css_for_streamlit_controls(filename):
     with open(filename) as f:
         st.html(f"<style>{f.read()}</style>")
 
+@st.cache_data
 def get_budget_data()-> Budget:
     dataset_url = "https://www.govinfo.gov/content/pkg/BUDGET-2027-TAB/xls/BUDGET-2027-TAB-2-1.xlsx"
     df = pd.read_excel(dataset_url)
@@ -45,6 +46,7 @@ def get_budget_data()-> Budget:
         deficit=int(latest.iloc[3])
     )
 
+@st.cache_data
 def get_expenditure_by_function(budget_total: int,year:int = 2025)-> list[Expenditure]:
     gao_by_name = {
         x.name.strip().lower(): x
@@ -97,6 +99,7 @@ def get_expenditure_by_function(budget_total: int,year:int = 2025)-> list[Expend
     
     return expenditures
 
+@st.cache_data
 def get_major_categories(expenditures:list[Expenditure])-> list[Expenditure]:
     top_level_functions = [
         x for x in expenditures
@@ -156,6 +159,7 @@ def get_major_categories(expenditures:list[Expenditure])-> list[Expenditure]:
 
     return major_categories
 
+@st.cache_data
 def get_GAO_functions()->list[GAOFunction]: 
     """ This function parses the GAO glossary expecting the following format:
     SuperCode
