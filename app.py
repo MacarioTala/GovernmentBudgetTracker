@@ -4,7 +4,8 @@ import streamlit as st
 from etl import get_budget_data,get_major_categories,get_expenditure_by_function
 from show_budget_intro import show_budget_intro
 from animate_initial_spending import animate_initial_spending
-from etl import load_css_for_streamlit_controls
+from etl import load_css_for_streamlit_controls,get_GAO_functions
+from convenience import human_conceivable_number, gao_lookup
 
 def start_budget():
     st.session_state.started=True
@@ -40,6 +41,7 @@ if st.session_state.started:
 
     expenditures = get_expenditure_by_function(budget.outlays)
     categories = get_major_categories(expenditures)
+    gao_functions = get_GAO_functions()
 
     should_animate = not st.session_state.get(
         "initial_spending_done",
@@ -58,19 +60,28 @@ if st.session_state.started:
     selected_gao_code = None
     selected_gao_category =None
     selected_gao_description = None
+    expenditure_amount = None
+    selected_gao = None
 
     if result.selected is not None:
         st.session_state.selected_expenditure = result.selected
         selected_gao_code = result.selected["gao_code"]
         selected_gao_category = result.selected["category"]
-        selected_gao_description = next(
+        selected_gao = next(
             (
-                category.gao_function.description
+                category.gao_function
                 for category in categories
                 if category.gao_function
                 and category.gao_function.code == selected_gao_code
             ),
             None
+        )
+        selected_gao_description = selected_gao.description
+        expenditure_amount = next(
+            expenditure.amount
+            for expenditure in expenditures
+            if expenditure.gao_function
+            and expenditure.gao_function.code == selected_gao_code
         )
 
     st.markdown(
@@ -95,9 +106,17 @@ if st.session_state.started:
                             """,
                             unsafe_allow_html=True
                         )
-    st.write("Selected expenditure:", selected_gao_category if selected_gao_category else '')
+    if expenditure_amount:
+        st.header(f"**This cost USD${human_conceivable_number(expenditure_amount)} in {budget.year}**")
+
     if selected_gao_description:
         st.write(selected_gao_description)
-    
+
+    if selected_gao and selected_gao.subcodes:
+        st.subheader("*This has the following subfunctions*")
+        for subcode in selected_gao.subcodes:
+            expenditure_to_display = gao_lookup(gao_functions,subcode)
+            st.write(f"**{subcode} {expenditure_to_display.name}**")
+            st.write(expenditure_to_display.description)
 
 # %%
