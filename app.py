@@ -7,6 +7,7 @@ from rough_budget_balancing import rough_budget_balancing
 from etl import load_css_for_streamlit_controls,get_GAO_functions
 from show_initial_breakdown import show_initial_breakdown
 
+st.set_page_config(page_title="The USA: A Household Budget")
 if "stage" not in st.session_state:
     st.session_state.stage = "intro"
 
