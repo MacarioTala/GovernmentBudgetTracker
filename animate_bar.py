@@ -1,6 +1,7 @@
 import time
 import textwrap
 import streamlit as st
+from convenience import human_conceivable_number
 
 
 def animate_bar(
@@ -14,6 +15,14 @@ def animate_bar(
     steps = 60
     final_width = 85
     shrink_steps = 15
+
+    def render_gap(amount:int):
+        if amount>0:
+            return f"Gap: ${human_conceivable_number(amount)}"
+        else:
+            return ""
+
+
 
     for step in range(steps + 1):
         progress = step / steps
@@ -67,7 +76,7 @@ def animate_bar(
                 font-weight: 600;
                 font-size: 18px;
             ">
-                ${current_amount:.2f}T
+                ${human_conceivable_number(current_amount)}
             </div>
         </div>
         """)
@@ -110,6 +119,7 @@ def animate_bar(
         width: {red_width}%;
         height: 100%;
         background: #e74c3c;
+        overflow: hidden;
     "></div>
 
     <div style="
@@ -123,8 +133,30 @@ def animate_bar(
         font-weight: 600;
         font-size: 14px;
     ">
-       {label} ${amount:.2f}T
+       {label} ${human_conceivable_number(amount)}
     </div>
+     <div style="
+            position: absolute;
+            justify-content: center;
+            left: {green_width}%;
+            width: {red_width}%;
+            top: 0;
+            height: 100%;
+
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            box-sizing: border-box;
+
+            overflow:hidden;
+            white-space: nowrap;
+
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        ">
+            {render_gap(red_amount)}
+        </div>
 </div>
 """
 

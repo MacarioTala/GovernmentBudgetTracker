@@ -7,7 +7,7 @@ def show_budget_intro(
           spent,
           gap):
     with intro.container():
-            st.write("Here's what we took in and spent last year")
+            st.header("Here's what we took in and spent last year")
             animate_bar(
                 "Income:",
                 amount=tax_receipts,

@@ -21,10 +21,13 @@ spending_component = st.components.v2.component(
 def animate_initial_spending(
     total_spending: float,
     categories: list[Expenditure],
-    animate: bool = True,
     duration: float = 1.2
 ):
-    if animate:
+
+    if "initial_spending_animation_done" not in st.session_state:
+        st.session_state.initial_spending_animation_done = False
+
+    if not st.session_state.initial_spending_animation_done:
         placeholder = st.empty()
 
         # Stage 1: one big green spending block
@@ -50,7 +53,7 @@ def animate_initial_spending(
 
         time.sleep(0.8)
 
-        steps = 40
+        steps = 20
 
         for step in range(steps + 1):
             progress = step / steps
@@ -61,6 +64,9 @@ def animate_initial_spending(
             time.sleep(duration / steps)
 
         placeholder.empty()
+
+        st.session_state.initial_spending_animation_done = True
+
     else:
         boxes_html = build_spending_boxes(
         categories,
