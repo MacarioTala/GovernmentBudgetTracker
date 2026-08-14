@@ -1,14 +1,13 @@
 from animate_initial_spending import animate_initial_spending
 from convenience import gao_lookup, human_conceivable_number
-
-
+from etl.datamodel import ExpenditureDisplay,Expenditure
 import streamlit as st
 
 
-def show_initial_breakdown(budget, spent, expenditures, categories, gao_functions):
+def show_initial_breakdown(budget, spent, expenditures:list[Expenditure], expense_categories : list[ExpenditureDisplay], gao_functions):
     result = animate_initial_spending(
         total_spending=spent,
-        categories=categories
+        categories=expense_categories
     )
 
     selected_gao_code = None
@@ -19,22 +18,16 @@ def show_initial_breakdown(budget, spent, expenditures, categories, gao_function
     if result.selected is not None:
         st.session_state.selected_expenditure = result.selected
         selected_gao_code = result.selected["gao_code"]
+
         selected_gao = next(
-            (
-                category.gao_function
-                for category in categories
-                if category.gao_function
-                and category.gao_function.code == selected_gao_code
-            ),
-            None
-        )
-        selected_gao_description = selected_gao.description
-        expenditure_amount = next(
-            expenditure.amount
-            for expenditure in expenditures
-            if expenditure.gao_function
-            and expenditure.gao_function.code == selected_gao_code
-        )
+                expense_category
+                for expense_category in expense_categories
+                if expense_category.expenditure.gao_function
+                and expense_category.expenditure.gao_function.code == selected_gao_code
+            )
+        selected_gao_description = selected_gao.expenditure.gao_function.description
+        expenditure_amount = selected_gao.expenditure.amount
+        
 
     st.markdown(
                         """
@@ -61,14 +54,39 @@ def show_initial_breakdown(budget, spent, expenditures, categories, gao_function
     st.write("Click each function to see more details")
     st.write("When you're ready, click next, and let's balance the budget!")
     if expenditure_amount:
-        st.header(f"**This cost USD${human_conceivable_number(expenditure_amount)} in {budget.year}**")
+        tldr=None
+        if expenditure_amount>0:
+            tldr = f"**This cost USD${human_conceivable_number(expenditure_amount)} in {budget.year}**"
+        else:
+            tldr = f"**This saved USD${human_conceivable_number(expenditure_amount)} in {budget.year}**" 
+        st.header(tldr)
 
     if selected_gao_description:
         st.write(selected_gao_description)
 
-    if selected_gao and selected_gao.subcodes:
+    if selected_gao and selected_gao.expenditure.gao_function.subcodes:
         st.subheader("*This has the following subfunctions*")
-        for subcode in selected_gao.subcodes:
+        for subcode in selected_gao.expenditure.gao_function.subcodes:
             expenditure_to_display = gao_lookup(gao_functions,subcode)
             st.write(f"**{subcode} {expenditure_to_display.name}**")
             st.write(expenditure_to_display.description)
+
+    if selected_gao and selected_gao.children:
+        st.subheader("This expense rolls up the following expenses")
+        rows = [
+                {
+                    "GAO Code": child.gao_function.code,
+                    "Function": child.gao_function.name,
+                    "Amount" : f"USD$ {human_conceivable_number(child.amount)}",
+                    "Percentage": f"{child.percentage:.2f}"
+                }
+                for child in selected_gao.children
+            ]
+        rows.append(
+            {
+                "GAO Code": "",
+                "Function": "Total",
+                "Amount": f"${human_conceivable_number(sum(x.amount for x in selected_gao.children))}",
+                "Percentage": f"{sum(x.percentage for x in selected_gao.children):.2f}%"
+})
+        st.table(rows)

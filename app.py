@@ -1,10 +1,13 @@
 
 #%%
 import streamlit as st
-from etl import get_budget_data,get_major_categories,get_expenditure_by_function
+from etl.etl_convenience import load_css_for_streamlit_controls
+from etl.get_GAO_functions import get_GAO_functions
+from etl.get_budget_data import get_budget_data
+from etl.get_expenditure_by_function import get_expenditure_by_function
+from etl.get_major_categories import get_major_categories
 from show_budget_intro import show_budget_intro
 from rough_budget_balancing import rough_budget_balancing
-from etl import load_css_for_streamlit_controls,get_GAO_functions
 from show_initial_breakdown import show_initial_breakdown
 
 st.set_page_config(page_title="The USA: A Household Budget")
@@ -50,11 +53,12 @@ elif st.session_state.stage == "initial_breakdown":
         st.button("Next->", use_container_width=True,on_click=start_rough_balance)
 
     #etl section - cached in module
+    threshold_for_major_category_inclusion = 10
     expenditures = get_expenditure_by_function(budget.outlays)
-    categories = get_major_categories(expenditures)
+    expenditure_displays = get_major_categories(expenditures,threshold_for_major_category_inclusion)
     gao_functions = get_GAO_functions()
 
-    show_initial_breakdown(budget, spent, expenditures, categories, gao_functions)
+    show_initial_breakdown(budget, spent, expenditures, expenditure_displays, gao_functions)
 
 elif st.session_state.stage == "rough_balance":
     rough_budget_balancing(spent,tax_receipts,gap)

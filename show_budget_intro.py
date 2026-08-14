@@ -1,5 +1,5 @@
 import streamlit as st
-from animate_bar import animate_bar
+from animate_bar.animate_bar import animate_bar
 
 def show_budget_intro(
           intro,

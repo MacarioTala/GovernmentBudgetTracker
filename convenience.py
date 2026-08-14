@@ -1,4 +1,4 @@
-from etl import Expenditure,GAOFunction
+from etl.datamodel import GAOFunction
 
 def human_conceivable_number(value):
     abs_value = abs(value*1000000)
@@ -12,7 +12,7 @@ def human_conceivable_number(value):
     else:
         retval = f"{abs_value:,.0f}"
 
-    return f"({retval})" if value <0 else retval
+    return retval
 
 def gao_lookup(gao_functions: list[GAOFunction],gao_code: str)-> GAOFunction:
      retval = next(

@@ -1,7 +1,7 @@
 import time
 import streamlit as st
 from pathlib import Path
-from etl import Expenditure
+from etl.datamodel import ExpenditureDisplay
 from build_spending_boxes import build_spending_boxes
 
 SPENDING_HTML = """
@@ -20,7 +20,7 @@ spending_component = st.components.v2.component(
 
 def animate_initial_spending(
     total_spending: float,
-    categories: list[Expenditure],
+    categories: list[ExpenditureDisplay],
     duration: float = 1.2
 ):
 

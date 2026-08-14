@@ -1,6 +1,6 @@
 import streamlit as st
 from convenience import human_conceivable_number
-from animate_bar import animate_bar
+from animate_bar.animate_bar import animate_bar
 
 def rough_budget_balancing(spent: int, tax_receipts: int,gap: int):
     st.header("Here's that budget bar again")
