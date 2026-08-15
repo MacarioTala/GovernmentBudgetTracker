@@ -1,11 +1,16 @@
 import streamlit as st
 from animate_bar.animate_bar import animate_bar
+from convenience import human_conceivable_number
 
 def show_budget_intro(
           intro,
           tax_receipts,
           spent,
           gap):
+    tax_receipts=tax_receipts*1000000
+    spent=spent*1000000
+    gap=gap*1000000
+
     with intro.container():
             st.header("Here's what we took in and spent last year")
             animate_bar(
@@ -23,18 +28,18 @@ def show_budget_intro(
             with income:
                 st.metric(
                     "Income",
-                    f"${tax_receipts:.2f} trillion"
+                    f"${human_conceivable_number(tax_receipts,True)}"
                 )
 
             with spending:
                 st.metric(
                     "Spent",
-                    f"${spent:.2f} trillion"
+                    f"${human_conceivable_number(spent,True)}"
                 )
 
             st.metric(
                 "Budget gap",
-                f"${gap:.2f} trillion")
+                f"${human_conceivable_number(gap,True)}")
 
             st.markdown(
                 """

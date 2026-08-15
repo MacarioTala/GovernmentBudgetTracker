@@ -33,6 +33,11 @@ intro = st.empty()
 tax_receipts = budget.receipts/1_000_000
 spent = budget.outlays/1_000_000
 gap = abs(budget.deficit)/1_000_000
+ #etl section - cached in module
+threshold_for_major_category_inclusion = 10
+expenditures = get_expenditure_by_function(budget.outlays)
+expenditure_displays = get_major_categories(expenditures,threshold_for_major_category_inclusion)
+gao_functions = get_GAO_functions()
 
 if st.session_state.stage=="intro":
     show_budget_intro(
@@ -52,15 +57,9 @@ elif st.session_state.stage == "initial_breakdown":
     with next_column:
         st.button("Next->", use_container_width=True,on_click=start_rough_balance)
 
-    #etl section - cached in module
-    threshold_for_major_category_inclusion = 10
-    expenditures = get_expenditure_by_function(budget.outlays)
-    expenditure_displays = get_major_categories(expenditures,threshold_for_major_category_inclusion)
-    gao_functions = get_GAO_functions()
-
     show_initial_breakdown(budget, spent, expenditures, expenditure_displays, gao_functions)
 
 elif st.session_state.stage == "rough_balance":
-    rough_budget_balancing(spent,tax_receipts,gap)
+    rough_budget_balancing(spent,tax_receipts,gap,expenditure_displays)
 
 # %%
