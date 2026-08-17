@@ -2,8 +2,15 @@ import streamlit as st
 from convenience import human_conceivable_number
 from etl.datamodel import ExpenditureDisplay
 from budget_balancing.render_balance_bar import render_balance_bar
+from etl.get_treasury_yield import get_treasury_yeild
 
-def rough_budget_balancing(spent: int, tax_receipts: int,gap: int, expenditure_displays : list[ExpenditureDisplay]):
+def rough_budget_balancing(spent: int
+                           , tax_receipts: int
+                           , gap: int
+                           , expenditure_displays : list[ExpenditureDisplay]
+                           , one_year_yield: float
+                           , thirty_year_yield: float
+                           ):
 
     total_cuts=0
     tax_receipts=tax_receipts*1_000_000
@@ -38,6 +45,17 @@ def rough_budget_balancing(spent: int, tax_receipts: int,gap: int, expenditure_d
 
     with borrow_text_box:
             st.write(f"**${human_conceivable_number(borrow_amount)}**")
+
+    st.write(f"Currently borrowing {human_conceivable_number(borrow_amount)} which is {borrow_percentage}% of the budget gap: " if human_conceivable_number(borrow_amount) is not None else "")
+    _,disclaimer = st.columns([.05,.95])
+    with disclaimer:
+        if borrow_amount is not None and borrow_amount != 0:
+            st.write(f"- If you borrowed short term, you would add ${human_conceivable_number(borrow_amount*one_year_yield)} to next year's Net Interest Expense")
+            st.write(f"- If you borrowed long term, you would add ${human_conceivable_number(borrow_amount*thirty_year_yield)} a year to the Net Interest Expense for the next 30 years")
+            st.write(f"   ... or ${human_conceivable_number(borrow_amount*thirty_year_yield*30)} over the next 30 years")
+            st.caption(f"*Note: This is a highly simplified version of the debt process. It is accurate to the nearest million, but actual costs depend on issuance, refinancing, and future interest rates")
+        else:
+             st.write("You are borrowing nothing for next year")
 
     for display in expenditure_displays:
         if display.expenditure.amount <=0: continue
