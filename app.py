@@ -11,7 +11,7 @@ from show_budget_intro import show_budget_intro
 from rough_budget_balancing import rough_budget_balancing
 from show_initial_breakdown import show_initial_breakdown
 
-st.set_page_config(page_title="The USA: A Household Budget")
+st.set_page_config(page_title="Balance The Budget")
 if "stage" not in st.session_state:
     st.session_state.stage = "intro"
 
@@ -28,7 +28,7 @@ load_css_for_streamlit_controls("style.css")
 
 budget = get_budget_data()
 
-st.title(f"The USA: A Household Budget - {budget.year}")
+st.title(f"Balance The Budget - {budget.year}")
 intro = st.empty()
 
 tax_receipts = budget.receipts/1_000_000

@@ -17,8 +17,7 @@ def get_expenditure_by_function(budget_total: int,year:int = 2025)-> list[Expend
         for x in get_GAO_functions()
     }
     dataset_url = (
-        "https://www.govinfo.gov/content/pkg/"
-        "BUDGET-2027-TAB/xls/BUDGET-2027-TAB-4-1.xlsx"
+        "https://www.govinfo.gov/content/pkg/BUDGET-2027-TAB/xls/BUDGET-2027-TAB-4-1.xlsx"
         )
     response = requests.get(dataset_url,timeout=30)
     wb=load_workbook(BytesIO(response.content))

@@ -2,7 +2,13 @@ import streamlit as st
 from convenience import human_conceivable_number
 from etl.datamodel import ExpenditureDisplay
 from budget_balancing.render_balance_bar import render_balance_bar
-from etl.get_treasury_yield import get_treasury_yeild
+from dataclasses import dataclass
+
+@dataclass 
+class Cut:
+     name: str
+     percentage : int
+     amount : int
 
 def rough_budget_balancing(spent: int
                            , tax_receipts: int
@@ -12,7 +18,11 @@ def rough_budget_balancing(spent: int
                            , thirty_year_yield: float
                            ):
 
+    if "budget_screen" not in st.session_state:
+         st.session_state.budget_screen = "editor"
+
     total_cuts=0
+    cuts_made:list[Cut]=[]
     tax_receipts=tax_receipts*1_000_000
     gap=gap*1_000_000
     remaining_gap=gap
@@ -23,9 +33,22 @@ def rough_budget_balancing(spent: int
         you_need_header=st.empty()
 
     with btn_finalize_column:
-         st.button("Finalize Budget->")
+         finalize_clicked = st.button("Finalize Budget ->")
 
+    finalize_message = st.empty()
     balance_bar = st.empty()
+
+    if st.session_state.budget_screen == "summary":
+         st.header("You balanced the budget!")
+
+         st.write(f"You cut **${human_conceivable_number(st.session_state.final_total_cuts)}**")
+         st.write(f"Consisting of:")
+         for cut in st.session_state.final_cuts_made:
+              st.write(f"{cut.name} by {cut.percentage}%, saving **${cut.amount}**")
+         st.write(f"You borrowed **${human_conceivable_number(st.session_state.borrow_amount_final)}**")
+         st.write(f"Thanks for trying Balance the Budget!")
+         st.write(f"V2 will let you cut specific programs and add new spending items")
+         return
 
     borrow_label_column,borrow_text_box,borrow_slider_column=st.columns([1,1,2])
     with borrow_label_column:
@@ -44,7 +67,8 @@ def rough_budget_balancing(spent: int
         borrow_amount = int(gap*(borrow_percentage/100))
 
     with borrow_text_box:
-            st.write(f"**${human_conceivable_number(borrow_amount)}**")
+            if human_conceivable_number(borrow_amount) is not None:
+                st.write(f"**${human_conceivable_number(borrow_amount)}**")
 
     st.write(f"Currently borrowing {human_conceivable_number(borrow_amount)} which is {borrow_percentage}% of the budget gap: " if human_conceivable_number(borrow_amount) is not None else "")
     _,disclaimer = st.columns([.05,.95])
@@ -74,6 +98,16 @@ def rough_budget_balancing(spent: int
                 (display.expenditure.amount)
                 *(cut_percentage/100))
             total_cuts+=cut_amount
+
+            if cut_amount>0:
+                 cuts_made.append(
+                      Cut(
+                           display.expenditure.name,
+                           cut_percentage,
+                           cut_amount
+                           )
+                 )
+            st.session_state.final_cuts_made = cuts_made
             
         with label_column:
                     st.write(f"{display.expenditure.name}")
@@ -83,10 +117,20 @@ def rough_budget_balancing(spent: int
     remaining_spending = total_spending-total_cuts
     you_need_header.subheader(f"You need ${human_conceivable_number(remaining_gap,True)}")
 
+    if finalize_clicked:
+        st.session_state.finalize_clicked = False
+        if remaining_gap > 0:
+            finalize_message.error("You have not balanced the budget!")
+        else:
+            st.session_state.borrow_amount_final = borrow_amount
+            st.session_state.final_total_cuts = total_cuts
+            st.session_state.budget_screen = "summary"
+            st.session_state.final_borrow_amount = borrow_amount
+            st.session_state.final_total_cuts = total_cuts
+            st.rerun()
+
     balance_bar.html(
         render_balance_bar(funded=tax_receipts+borrow_amount,
                            gap=remaining_gap,
                            total=remaining_spending
                            ))
-    
-    
