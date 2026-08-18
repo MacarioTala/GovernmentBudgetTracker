@@ -23,18 +23,18 @@ def get_treasury_yeild(date_string: str |None=None):
 
     return TreasuryYieldCurve(
         date=latest["Date"].date(),
-        one_month=latest["1 Mo"],
-        one_point_five_month=latest["1.5 Month"],
-        two_month=latest["2 Mo"],
-        three_month=latest["3 Mo"],
-        four_month=latest["4 Mo"],
-        six_month=latest["6 Mo"],
-        one_year=latest["1 Yr"],
-        two_year=latest["2 Yr"],
-        three_year=latest["3 Yr"],
-        five_year=latest["5 Yr"],
-        seven_year=latest["7 Yr"],
-        ten_year=latest["10 Yr"],
-        twenty_year=latest["20 Yr"],
-        thirty_year=latest["30 Yr"]
+        one_month=latest["1 Mo"]/100,
+        one_point_five_month=latest["1.5 Month"]/100,
+        two_month=latest["2 Mo"]/100,
+        three_month=latest["3 Mo"]/100,
+        four_month=latest["4 Mo"]/100,
+        six_month=latest["6 Mo"]/100,
+        one_year=latest["1 Yr"]/100,
+        two_year=latest["2 Yr"]/100,
+        three_year=latest["3 Yr"]/100,
+        five_year=latest["5 Yr"]/100,
+        seven_year=latest["7 Yr"]/100,
+        ten_year=latest["10 Yr"]/100,
+        twenty_year=latest["20 Yr"]/100,
+        thirty_year=latest["30 Yr"]/100
     )

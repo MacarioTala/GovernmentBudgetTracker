@@ -21,6 +21,12 @@ def rough_budget_balancing(spent: int
     if "budget_screen" not in st.session_state:
          st.session_state.budget_screen = "editor"
 
+    if "financing_next_year" not in st.session_state:
+         st.session_state.financing_next_year = None
+
+    if "financing_long_term" not in st.session_state:
+             st.session_state.financing_long_term = None
+
     total_cuts=0
     cuts_made:list[Cut]=[]
     tax_receipts=tax_receipts*1_000_000
@@ -33,22 +39,36 @@ def rough_budget_balancing(spent: int
         you_need_header=st.empty()
 
     with btn_finalize_column:
-         finalize_clicked = st.button("Finalize Budget ->")
+         if not st.session_state.budget_screen == "summary":
+            finalize_clicked = st.button("Finalize Budget ->")
 
     finalize_message = st.empty()
     balance_bar = st.empty()
 
     if st.session_state.budget_screen == "summary":
-         st.header("You balanced the budget!")
+        st.header("You balanced the budget!")
 
-         st.write(f"You cut **${human_conceivable_number(st.session_state.final_total_cuts)}**")
-         st.write(f"Consisting of:")
-         for cut in st.session_state.final_cuts_made:
-              st.write(f"{cut.name} by {cut.percentage}%, saving **${cut.amount}**")
-         st.write(f"You borrowed **${human_conceivable_number(st.session_state.borrow_amount_final)}**")
-         st.write(f"Thanks for trying Balance the Budget!")
-         st.write(f"V2 will let you cut specific programs and add new spending items")
-         return
+        if st.session_state.final_total_cuts:
+            st.write(f"- You cut **${human_conceivable_number(st.session_state.final_total_cuts)}**")
+            st.write(f"Consisting of:")
+            _,cut_column = st.columns([.05,.95])
+            with cut_column:
+                for cut in st.session_state.final_cuts_made:
+                    st.write(f"- Cutting {cut.name} by {cut.percentage}%, saving **${human_conceivable_number(cut.amount)}**")
+        else:
+             st.write("- You cut nothing from the budget")
+        if human_conceivable_number(st.session_state.borrow_amount_final) is not None:
+            st.write(f"- You borrowed **${human_conceivable_number(st.session_state.borrow_amount_final)}**")
+            st.write(f"- Your borrowing has increased next year's deficit by: ${human_conceivable_number(st.session_state.financing_next_year)}")
+        if st.session_state.financing_long_term:
+            st.write(f"... and a total of ${human_conceivable_number(st.session_state.financing_long_term)} over the next 30 years") 
+        st.write(f"Thanks for trying Balance the Budget!")
+        st.write(f"V2 will let you cut specific programs and add new spending items")
+
+        if st.button("Try Again"):
+             st.session_state.clear()
+             st.rerun()
+        return
 
     borrow_label_column,borrow_text_box,borrow_slider_column=st.columns([1,1,2])
     with borrow_label_column:
@@ -74,9 +94,27 @@ def rough_budget_balancing(spent: int
     _,disclaimer = st.columns([.05,.95])
     with disclaimer:
         if borrow_amount is not None and borrow_amount != 0:
-            st.write(f"- If you borrowed short term, you would add ${human_conceivable_number(borrow_amount*one_year_yield)} to next year's Net Interest Expense")
-            st.write(f"- If you borrowed long term, you would add ${human_conceivable_number(borrow_amount*thirty_year_yield)} a year to the Net Interest Expense for the next 30 years")
-            st.write(f"   ... or ${human_conceivable_number(borrow_amount*thirty_year_yield*30)} over the next 30 years")
+            SHORT="Short-term"
+            LONG ="Long-term"
+            st.write("Do you want to borrow:")
+            borrow_term = st.segmented_control(
+                         "Borrow Term",
+                         [SHORT,LONG],
+                         default="Short-term",
+                         label_visibility="collapsed"
+                    )
+            if borrow_term == SHORT:
+                new_short_borrowing = borrow_amount*one_year_yield
+                st.session_state.financing_next_year=new_short_borrowing
+                st.write(f"- This borrowing will add ${human_conceivable_number(new_short_borrowing)} to next year's Net Interest Expense")
+            else:
+                new_short_borrowing=borrow_amount*thirty_year_yield
+                st.session_state.financing_next_year=new_short_borrowing
+                new_long_borrowing=borrow_amount*thirty_year_yield*30
+                st.session_state.financing_long_term=new_long_borrowing
+                st.write(f"- This borrowing will add ${human_conceivable_number(new_short_borrowing)} a year to the Net Interest Expense for the next 30 years")
+                st.write(f"   ... or ${human_conceivable_number(new_long_borrowing)} over the next 30 years")
+            
             st.caption(f"*Note: This is a highly simplified version of the debt process. It is accurate to the nearest million, but actual costs depend on issuance, refinancing, and future interest rates")
         else:
              st.write("You are borrowing nothing for next year")
