@@ -4,7 +4,7 @@ from datetime import date
 import streamlit as st
 
 @st.cache_data
-def get_treasury_yeild(date_string: str |None=None):
+def get_treasury_yield(date_string: str |None=None):
     """
     Gets the latest US Treasury Yield.
     Usage: get_treasury_yeild(date_string) where date_string is of the format: YYYYMM

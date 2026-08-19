@@ -3,6 +3,7 @@ import streamlit as st
 from pathlib import Path
 from etl.datamodel import ExpenditureDisplay
 from build_spending_boxes import build_spending_boxes
+from convenience import human_conceivable_number
 
 SPENDING_HTML = """
 <div id="spending-container"></div>
@@ -46,7 +47,7 @@ def animate_initial_spending(
                 font-size: 24px;
                 font-weight: 700;
             ">
-                Total spending: ${total_spending:.2f}T
+                Total spending: ${human_conceivable_number(total_spending)}T
             </div>
             """
         )

@@ -3,6 +3,7 @@ from convenience import human_conceivable_number
 from etl.datamodel import ExpenditureDisplay
 from budget_balancing.render_balance_bar import render_balance_bar
 from dataclasses import dataclass
+from add_new_program import add_new_program
 
 @dataclass 
 class Cut:
@@ -10,9 +11,7 @@ class Cut:
      percentage : int
      amount : int
 
-def rough_budget_balancing(spent: int
-                           , tax_receipts: int
-                           , gap: int
+def rough_budget_balancing(tax_receipts: int
                            , expenditure_displays : list[ExpenditureDisplay]
                            , one_year_yield: float
                            , thirty_year_yield: float
@@ -27,16 +26,27 @@ def rough_budget_balancing(spent: int
     if "financing_long_term" not in st.session_state:
              st.session_state.financing_long_term = None
 
+    new_programs = st.session_state.get("new_programs",[])
+    all_expenditure_displays = expenditure_displays+new_programs
+    new_spending = sum(display.expenditure.amount
+                           for display in new_programs)
+    total_spending= sum(display.expenditure.amount
+                           for display in all_expenditure_displays)
     total_cuts=0
     cuts_made:list[Cut]=[]
-    tax_receipts=tax_receipts*1_000_000
-    gap=gap*1_000_000
+    gap=max(0,total_spending-tax_receipts)
     remaining_gap=gap
-    total_spending=spent*1_000_000
 
-    yn_column,btn_finalize_column = st.columns([.87,.13])
+    yn_column,btn_new_program_column,btn_finalize_column = st.columns([.74,.13,.13])
     with yn_column:
         you_need_header=st.empty()
+        if not st.session_state.budget_screen == "summary":
+            st.caption("You can see the effect of adding new spending to this by clicking 'Add New Program'")
+
+    with btn_new_program_column:
+         if not st.session_state.budget_screen == "summary":
+            if st.button("Add New Program"):
+                add_new_program(total_spending)
 
     with btn_finalize_column:
          if not st.session_state.budget_screen == "summary":
@@ -48,6 +58,12 @@ def rough_budget_balancing(spent: int
     if st.session_state.budget_screen == "summary":
         st.header("You balanced the budget!")
 
+        if st.session_state.new_programs:
+             st.write(f"- You added the following new programs, totalling {human_conceivable_number(new_spending)}")
+             _,new_program_column= st.columns([.05,.95])
+             with new_program_column:
+                  for program in st.session_state.new_programs:
+                       st.write(f"- {program.expenditure.name} : {human_conceivable_number(program.expenditure.amount)}")
         if st.session_state.final_total_cuts:
             st.write(f"- You cut **${human_conceivable_number(st.session_state.final_total_cuts)}**")
             st.write(f"Consisting of:")
@@ -63,7 +79,9 @@ def rough_budget_balancing(spent: int
         if st.session_state.financing_long_term:
             st.write(f"... and a total of ${human_conceivable_number(st.session_state.financing_long_term)} over the next 30 years") 
         st.write(f"Thanks for trying Balance the Budget!")
-        st.write(f"V2 will let you cut specific programs and add new spending items")
+        st.write(f"V3 will let you cut specific programs")
+
+        st.caption(f"*For information and educational purposes only. Congress isn't mucking around with sliders for the budget")
 
         if st.button("Try Again"):
              st.session_state.clear()
@@ -118,8 +136,8 @@ def rough_budget_balancing(spent: int
             st.caption(f"*Note: This is a highly simplified version of the debt process. It is accurate to the nearest million, but actual costs depend on issuance, refinancing, and future interest rates")
         else:
              st.write("You are borrowing nothing for next year")
-
-    for display in expenditure_displays:
+         
+    for display in all_expenditure_displays:
         if display.expenditure.amount <=0: continue
         label_column,slider_column = st.columns([1,2])
 

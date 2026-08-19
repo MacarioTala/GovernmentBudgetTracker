@@ -7,10 +7,6 @@ def show_budget_intro(
           tax_receipts,
           spent,
           gap):
-    tax_receipts=tax_receipts*1000000
-    spent=spent*1000000
-    gap=gap*1000000
-
     with intro.container():
             st.header("Here's what we took in and spent last year")
             animate_bar(
@@ -53,5 +49,5 @@ def show_budget_intro(
                 unsafe_allow_html=True
             )
 
-            st.write(f"If we changed absolutely nothing and didn't grow, we would need to borrow another {gap:.2f} trillion, adjusted for inflation.")
+            st.write(f"If we changed absolutely nothing and didn't grow, we would need to borrow another {human_conceivable_number(gap)} , adjusted for inflation.")
             st.write("Think you can balance the budget?")

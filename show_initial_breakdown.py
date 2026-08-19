@@ -1,10 +1,10 @@
 from animate_initial_spending import animate_initial_spending
 from convenience import gao_lookup, human_conceivable_number
-from etl.datamodel import ExpenditureDisplay,Expenditure
+from etl.datamodel import ExpenditureDisplay
 import streamlit as st
 
 
-def show_initial_breakdown(budget, spent, expenditures:list[Expenditure], expense_categories : list[ExpenditureDisplay], gao_functions):
+def show_initial_breakdown(budget, spent, expense_categories : list[ExpenditureDisplay], gao_functions):
     result = animate_initial_spending(
         total_spending=spent,
         categories=expense_categories
