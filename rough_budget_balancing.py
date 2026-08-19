@@ -16,7 +16,8 @@ def rough_budget_balancing(tax_receipts: int
                            , one_year_yield: float
                            , thirty_year_yield: float
                            ):
-
+    SHORT="Short-term"
+    LONG ="Long-term"
     if "budget_screen" not in st.session_state:
          st.session_state.budget_screen = "editor"
 
@@ -58,7 +59,7 @@ def rough_budget_balancing(tax_receipts: int
     if st.session_state.budget_screen == "summary":
         st.header("You balanced the budget!")
 
-        if st.session_state.new_programs:
+        if new_programs:
              st.write(f"- You added the following new programs, totalling {human_conceivable_number(new_spending)}")
              _,new_program_column= st.columns([.05,.95])
              with new_program_column:
@@ -76,6 +77,8 @@ def rough_budget_balancing(tax_receipts: int
         if human_conceivable_number(st.session_state.borrow_amount_final) is not None:
             st.write(f"- You borrowed **${human_conceivable_number(st.session_state.borrow_amount_final)}**")
             st.write(f"- Your borrowing has increased next year's deficit by: ${human_conceivable_number(st.session_state.financing_next_year)}")
+            if st.session_state.borrow_term == SHORT:
+                 st.write(f"... and has required us to either refinance or pay the entire **${human_conceivable_number(st.session_state.borrow_amount_final)}** next year")
         if st.session_state.financing_long_term:
             st.write(f"... and a total of ${human_conceivable_number(st.session_state.financing_long_term)} over the next 30 years") 
         st.write(f"Thanks for trying Balance the Budget!")
@@ -112,19 +115,19 @@ def rough_budget_balancing(tax_receipts: int
     _,disclaimer = st.columns([.05,.95])
     with disclaimer:
         if borrow_amount is not None and borrow_amount != 0:
-            SHORT="Short-term"
-            LONG ="Long-term"
             st.write("Do you want to borrow:")
             borrow_term = st.segmented_control(
                          "Borrow Term",
                          [SHORT,LONG],
-                         default="Short-term",
+                         default=SHORT,
+                         key="borrow_term",
                          label_visibility="collapsed"
                     )
             if borrow_term == SHORT:
                 new_short_borrowing = borrow_amount*one_year_yield
                 st.session_state.financing_next_year=new_short_borrowing
                 st.write(f"- This borrowing will add ${human_conceivable_number(new_short_borrowing)} to next year's Net Interest Expense")
+                st.write(f"and require us to either pay or refinance the entire ${human_conceivable_number(borrow_amount)} next year")
             else:
                 new_short_borrowing=borrow_amount*thirty_year_yield
                 st.session_state.financing_next_year=new_short_borrowing
